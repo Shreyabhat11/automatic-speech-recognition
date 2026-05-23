@@ -1,65 +1,127 @@
+import os
 import pandas as pd
-from tqdm import tqdm
+
+from jiwer import wer, cer
 
 from models.whisper_local import transcribe_whisper
 from models.deepgram_api import transcribe_deepgram
 
-from evaluation.metrics import calculate_metrics
-from evaluation.entity_eval import locality_detected
 
-df = pd.read_csv("data/transcripts/ground_truth.csv")
+GROUND_TRUTH_CSV = "data/transcripts/ground_truths.csv"
+AUDIO_DIR = "data/processed_audio"
+
+OUTPUT_CSV = "evaluation/benchmark_results.csv"
+
+os.makedirs("evaluation", exist_ok=True)
+
+df = pd.read_csv(GROUND_TRUTH_CSV)
 
 results = []
 
-for _, row in tqdm(df.iterrows(), total=len(df)):
+print("\nStarting Benchmark...\n")
 
-    audio_path = f"data/raw_audio/{row['filename']}"
+for idx, row in df.iterrows():
 
-    ground_truth = row["ground_truth"]
+    filename = row["filename"]
     locality = row["locality"]
+    ground_truth = row["ground_truth"]
+    condition = row["condition"]
 
-    whisper_result = transcribe_whisper(audio_path)
-    deepgram_result = transcribe_deepgram(audio_path)
+    audio_path = os.path.join(AUDIO_DIR, filename)
 
-    whisper_metrics = calculate_metrics(
-        ground_truth,
-        whisper_result["transcript"]
-    )
+    print(f"\nProcessing: {filename}")
 
-    deepgram_metrics = calculate_metrics(
-        ground_truth,
-        deepgram_result["transcript"]
-    )
+    # ---------------------------
+    # WHISPER
+    # ---------------------------
 
-    results.append({
-        "filename": row["filename"],
+    try:
 
-        "whisper_transcript": whisper_result["transcript"],
-        "deepgram_transcript": deepgram_result["transcript"],
+        whisper_result = transcribe_whisper(audio_path)
 
-        "whisper_wer": whisper_metrics["WER"],
-        "deepgram_wer": deepgram_metrics["WER"],
+        whisper_transcript = whisper_result["transcript"]
+        whisper_latency = whisper_result["latency"]
 
-        "whisper_cer": whisper_metrics["CER"],
-        "deepgram_cer": deepgram_metrics["CER"],
+        whisper_wer = wer(
+            ground_truth.lower(),
+            whisper_transcript.lower()
+        )
 
-        "whisper_entity_correct":
-            locality_detected(locality, whisper_result["transcript"]),
+        whisper_cer = cer(
+            ground_truth.lower(),
+            whisper_transcript.lower()
+        )
 
-        "deepgram_entity_correct":
-            locality_detected(locality, deepgram_result["transcript"]),
+        whisper_entity = locality.lower() in whisper_transcript.lower()
 
-        "whisper_latency": whisper_result["latency"],
-        "deepgram_latency": deepgram_result["latency"],
+        results.append({
+            "filename": filename,
+            "condition": condition,
+            "model": "whisper",
+            "locality": locality,
+            "ground_truth": ground_truth,
+            "transcript": whisper_transcript,
+            "wer": round(whisper_wer, 3),
+            "cer": round(whisper_cer, 3),
+            "entity_correct": whisper_entity,
+            "latency": whisper_latency
+        })
 
-        "condition": row["condition"]
-    })
+        print(f"Whisper Done")
+
+    except Exception as e:
+
+        print(f"Whisper failed: {e}")
+
+    # ---------------------------
+    # DEEPGRAM
+    # ---------------------------
+
+    try:
+
+        deepgram_result = transcribe_deepgram(audio_path)
+
+        deepgram_transcript = deepgram_result["transcript"]
+        deepgram_latency = deepgram_result["latency"]
+
+        deepgram_wer = wer(
+            ground_truth.lower(),
+            deepgram_transcript.lower()
+        )
+
+        deepgram_cer = cer(
+            ground_truth.lower(),
+            deepgram_transcript.lower()
+        )
+
+        deepgram_entity = locality.lower() in deepgram_transcript.lower()
+
+        results.append({
+            "filename": filename,
+            "condition": condition,
+            "model": "deepgram",
+            "locality": locality,
+            "ground_truth": ground_truth,
+            "transcript": deepgram_transcript,
+            "wer": round(deepgram_wer, 3),
+            "cer": round(deepgram_cer, 3),
+            "entity_correct": deepgram_entity,
+            "latency": deepgram_latency
+        })
+
+        print(f"Deepgram Done")
+
+    except Exception as e:
+
+        print(f"Deepgram failed: {e}")
+
+# --------------------------------
+# SAVE RESULTS
+# --------------------------------
 
 results_df = pd.DataFrame(results)
 
-results_df.to_csv(
-    "reports/benchmark_results.csv",
-    index=False
-)
+results_df.to_csv(OUTPUT_CSV, index=False)
 
-print(results_df.head())
+print("\nBenchmark completed.")
+print(f"Results saved to: {OUTPUT_CSV}")

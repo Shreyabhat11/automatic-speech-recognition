@@ -1,16 +1,33 @@
-import whisper
+import os
 import time
+import whisper
 
-model = whisper.load_model("large-v3")
+# Explicit FFmpeg path
+FFMPEG_PATH = r"C:\Users\shreyabhat\ffmpeg\bin"
+
+# Add ffmpeg to environment path for this process
+os.environ["PATH"] += os.pathsep + FFMPEG_PATH
+
+print("Loading Whisper model...")
+
+model = whisper.load_model("base")
+
+print("Whisper model loaded.")
+
 
 def transcribe_whisper(audio_path):
+
     start = time.time()
 
-    result = model.transcribe(audio_path)
+    result = model.transcribe(
+        audio_path,
+        language="hi",
+        fp16=False
+    )
 
     end = time.time()
 
     return {
-        "transcript": result["text"],
-        "latency": end - start
+        "transcript": result["text"].strip(),
+        "latency": round(end - start, 2)
     }
