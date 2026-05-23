@@ -1,0 +1,23 @@
+filename,locality,ground_truth,condition
+001_hsr_layout_noise.wav,HSR_Layout,"HSR Layout side PG liya hai mein ne",noise
+002_thalagattapura_quiet.wav,Indiranagar,"Thalagattapura side bhi jobs check kar raha hu",quiet
+003_jayanagar_quite.wav,Jayanagar,"Hello maam mein Jayanagar side available hu abhi",quite
+004_majestic_noise.wav,Majestic,"Bhaiyya Majestic jana hai kitna loge",noise
+005_thanisandra_noise.wav,Thanisandra,"Thanisandra main shift hone ka plan hai",noise
+006_kengeri_noise.wav,Kengeri,"Kengeri se travelling thoda long padta hai na",noise
+007_rajarajeshwarinagar_quite.wav,Rajarajeshwari_nagar,"Me pehle Rajarajeshwari nagar me rehti thi abhi vaha nahi hu", quite
+008_banashankari_quite.wav,Banashankari,"Banashankari se metro paladke ata hu",quite
+009_peenya_quite.wav,Peenya,"Peenya Industrial area me kaam mil sakta hai shayad",quite
+010_kr_puram_traffic.wav,KR_Puram,"KR puram ke paas rooms dekh raha hu abhi",traffic
+011_bommanahalli_traffic.wav,Bommanahalli,"Bommanahalli ke paas ek company me apply kiya hai",traffic
+012_rajajinagar_traffic.wav,Rajaji_Nagar,"Haa Rajajinajar se aa raha hu thoda late hoga",traffic
+013_whitefield_noise.wav,Whitefield,"Daily Whitefield tak travell karna mushkil ho raha hai",noise
+014_koramangala_noise.wav,Koramangala,"Meri interview koramangala mai hai jaldi jaana padega",noise
+015_electronic_city_quite.wav,Electronic_city,"Electronic city mei kaan karta hu mai",quite
+016_btm_layout_quite.wav,BTM_Layout,"BTM layout mai dost ke sath stay kar raha hu",quite
+017_marathahalli_noise.wav,Marathahalli,"Haa Bhaiyya thodi dher mai aajaungi abhi Marathahalli me hu",noise
+018_yalahanka_quite.wav,Yalahanka,"Airport ke liye apko yalaha nka se jaan padega",quite
+019_Sarjapur_road_noise.wav,Sarjapur_road,"Sarjapur road ke idhar rehta hu mai",noise
+020_silk_board_traffic.wav,Silk_board,"Silk board ke paas bahut traffic tha aaj",traffic
+021_hebbal_traffic.wav,Hebbal,"Hebbal ke paas hi mera ghar hai",traffic
+022_indiranagar_quite.wav,Indiranagar,"meri ek friend Indiranagar me rehti hai",quite

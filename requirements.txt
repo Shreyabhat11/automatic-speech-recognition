@@ -1,0 +1,16 @@
+openai-whisper
+torch
+torchaudio
+transformers
+datasets
+jiwer
+pandas
+numpy
+matplotlib
+seaborn
+soundfile
+librosa
+deepgram-sdk
+google-cloud-speech
+tqdm
+python-dotenv
