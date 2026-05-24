@@ -217,4 +217,4 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-echo "gen-lang-client-*.json" >> .gitignore
+google_credentials.json

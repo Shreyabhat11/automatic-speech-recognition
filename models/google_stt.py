@@ -9,7 +9,7 @@ from google.cloud import speech
 # -----------------------------------
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-    r"D:\project\automatic-speech-recognition\gen-lang-client-0550490215-feca78951f8f.json"
+    r"D:\project\automatic-speech-recognition\google_credentials.json"
 )
 
 # -----------------------------------

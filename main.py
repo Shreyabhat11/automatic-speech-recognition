@@ -3,7 +3,8 @@ import pandas as pd
 
 from models.whisper_local import transcribe_whisper
 from models.whisper_tiny import transcribe_whisper_tiny
-from models.whisper_small import transcribe_whisper_small
+from models.whisper_small import transcribe_whisper_small   
+from models.whisper_large import transcribe_whisper_large
 from models.deepgram_api import transcribe_deepgram
 from models.google_stt import transcribe_google
 
@@ -41,6 +42,7 @@ MODELS = {
     "whisper_base": transcribe_whisper,
     "whisper_tiny": transcribe_whisper_tiny,
     "whisper_small": transcribe_whisper_small,
+    "whisper_large": transcribe_whisper_large,
     "deepgram": transcribe_deepgram,
     "google_stt": transcribe_google
 }

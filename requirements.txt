@@ -14,6 +14,3 @@ deepgram-sdk
 google-cloud-speech
 tqdm
 python-dotenv
-accelerate
-sentencepiece
-nemo_toolkit[asr]

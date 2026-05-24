@@ -6,14 +6,14 @@ FFMPEG_PATH = r"C:\Users\shreyabhat\ffmpeg\bin"
 
 os.environ["PATH"] += os.pathsep + FFMPEG_PATH
 
-print("Loading Whisper Small model...")
+print("Loading Whisper Large model...")
 
-model = whisper.load_model("small")
+model = whisper.load_model("large-v3")
 
-print("Whisper Small loaded.")
+print("Whisper Large loaded.")
 
 
-def transcribe_whisper_small(audio_path):
+def transcribe_whisper_large(audio_path):
 
     start = time.time()
 
