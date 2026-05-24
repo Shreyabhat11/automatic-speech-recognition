@@ -1,11 +1,38 @@
-from jiwer import wer, cer
+from jiwer import wer
+from jiwer import cer
 
-def calculate_metrics(reference, hypothesis):
 
-    word_error = wer(reference, hypothesis)
-    char_error = cer(reference, hypothesis)
+def calculate_wer(
+    ground_truth,
+    transcript
+):
 
-    return {
-        "WER": word_error,
-        "CER": char_error
-    }
+    try:
+        return round(
+            wer(
+                ground_truth.lower(),
+                transcript.lower()
+            ),
+            3
+        )
+
+    except:
+        return 1.0
+
+
+def calculate_cer(
+    ground_truth,
+    transcript
+):
+
+    try:
+        return round(
+            cer(
+                ground_truth.lower(),
+                transcript.lower()
+            ),
+            3
+        )
+
+    except:
+        return 1.0

@@ -1,127 +1,244 @@
 import os
 import pandas as pd
 
-from jiwer import wer, cer
-
 from models.whisper_local import transcribe_whisper
+from models.whisper_tiny import transcribe_whisper_tiny
+from models.whisper_small import transcribe_whisper_small
 from models.deepgram_api import transcribe_deepgram
+from models.google_stt import transcribe_google
+
+from evaluation.metrics import calculate_wer, calculate_cer
+from evaluation.entity_utils import fuzzy_entity_match
+from evaluation.summary_report import generate_summary
+
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
-GROUND_TRUTH_CSV = "data/transcripts/ground_truths.csv"
+# ==========================================
+# CONFIG
+# ==========================================
+
 AUDIO_DIR = "data/processed_audio"
 
-OUTPUT_CSV = "evaluation/benchmark_results.csv"
+metadata = pd.read_csv(
+    "data/transcripts/ground_truths.csv"
+)
 
-os.makedirs("evaluation", exist_ok=True)
-
-df = pd.read_csv(GROUND_TRUTH_CSV)
+os.makedirs(
+    "results",
+    exist_ok=True
+)
 
 results = []
 
-print("\nStarting Benchmark...\n")
 
-for idx, row in df.iterrows():
+# ==========================================
+# MODEL REGISTRY
+# ==========================================
+
+MODELS = {
+    "whisper_base": transcribe_whisper,
+    "whisper_tiny": transcribe_whisper_tiny,
+    "whisper_small": transcribe_whisper_small,
+    "deepgram": transcribe_deepgram,
+    "google_stt": transcribe_google
+}
+
+
+# ==========================================
+# BENCHMARK LOOP
+# ==========================================
+
+for _, row in metadata.iterrows():
 
     filename = row["filename"]
     locality = row["locality"]
-    ground_truth = row["ground_truth"]
     condition = row["condition"]
+    ground_truth = row["ground_truth"]
 
-    audio_path = os.path.join(AUDIO_DIR, filename)
+    audio_path = os.path.join(
+        AUDIO_DIR,
+        filename
+    )
 
     print(f"\nProcessing: {filename}")
 
-    # ---------------------------
-    # WHISPER
-    # ---------------------------
+    for model_name, model_fn in MODELS.items():
 
-    try:
+        print(f"Running {model_name}...")
 
-        whisper_result = transcribe_whisper(audio_path)
+        try:
 
-        whisper_transcript = whisper_result["transcript"]
-        whisper_latency = whisper_result["latency"]
+            result = model_fn(audio_path)
 
-        whisper_wer = wer(
-            ground_truth.lower(),
-            whisper_transcript.lower()
-        )
+            entity_correct, entity_score = (
+                fuzzy_entity_match(
+                    locality,
+                    result["transcript"]
+                )
+            )
 
-        whisper_cer = cer(
-            ground_truth.lower(),
-            whisper_transcript.lower()
-        )
+            results.append({
+                "filename": filename,
+                "condition": condition,
+                "model": model_name,
+                "locality": locality,
+                "ground_truth": ground_truth,
+                "transcript": result["transcript"],
+                "wer": calculate_wer(
+                    ground_truth,
+                    result["transcript"]
+                ),
+                "cer": calculate_cer(
+                    ground_truth,
+                    result["transcript"]
+                ),
+                "entity_correct": entity_correct,
+                "entity_score": entity_score,
+                "latency": result["latency"]
+            })
 
-        whisper_entity = locality.lower() in whisper_transcript.lower()
+        except Exception as e:
 
-        results.append({
-            "filename": filename,
-            "condition": condition,
-            "model": "whisper",
-            "locality": locality,
-            "ground_truth": ground_truth,
-            "transcript": whisper_transcript,
-            "wer": round(whisper_wer, 3),
-            "cer": round(whisper_cer, 3),
-            "entity_correct": whisper_entity,
-            "latency": whisper_latency
-        })
+            print(f"ERROR in {model_name}: {e}")
 
-        print(f"Whisper Done")
 
-    except Exception as e:
-
-        print(f"Whisper failed: {e}")
-
-    # ---------------------------
-    # DEEPGRAM
-    # ---------------------------
-
-    try:
-
-        deepgram_result = transcribe_deepgram(audio_path)
-
-        deepgram_transcript = deepgram_result["transcript"]
-        deepgram_latency = deepgram_result["latency"]
-
-        deepgram_wer = wer(
-            ground_truth.lower(),
-            deepgram_transcript.lower()
-        )
-
-        deepgram_cer = cer(
-            ground_truth.lower(),
-            deepgram_transcript.lower()
-        )
-
-        deepgram_entity = locality.lower() in deepgram_transcript.lower()
-
-        results.append({
-            "filename": filename,
-            "condition": condition,
-            "model": "deepgram",
-            "locality": locality,
-            "ground_truth": ground_truth,
-            "transcript": deepgram_transcript,
-            "wer": round(deepgram_wer, 3),
-            "cer": round(deepgram_cer, 3),
-            "entity_correct": deepgram_entity,
-            "latency": deepgram_latency
-        })
-
-        print(f"Deepgram Done")
-
-    except Exception as e:
-
-        print(f"Deepgram failed: {e}")
-
-# --------------------------------
-# SAVE RESULTS
-# --------------------------------
+# ==========================================
+# SAVE RAW RESULTS
+# ==========================================
 
 results_df = pd.DataFrame(results)
 
-results_df.to_csv(OUTPUT_CSV, index=False)
+results_df.to_csv(
+    "results/benchmark_results.csv",
+    index=False
+)
 
-print("\nBenchmark completed.")
-print(f"Results saved to: {OUTPUT_CSV}")
+print("\nBenchmark results saved.")
+
+
+# ==========================================
+# SUMMARY REPORT
+# ==========================================
+
+summary_df = generate_summary(
+    results_df
+)
+
+summary_df.to_csv(
+    "results/summary_report.csv",
+    index=False
+)
+
+print("\nSummary Report:")
+print(summary_df)
+
+
+# ==========================================
+# PLOTS
+# ==========================================
+
+sns.set_style("whitegrid")
+
+
+# ------------------------------------------
+# WER
+# ------------------------------------------
+
+plt.figure(figsize=(8, 5))
+
+sns.barplot(
+    data=results_df,
+    x="model",
+    y="wer",
+    estimator="mean"
+)
+
+plt.title("Average WER by Model")
+
+plt.savefig(
+    "results/wer_comparison.png",
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+# ------------------------------------------
+# LATENCY
+# ------------------------------------------
+
+plt.figure(figsize=(8, 5))
+
+sns.barplot(
+    data=results_df,
+    x="model",
+    y="latency",
+    estimator="mean"
+)
+
+plt.title("Average Latency by Model")
+
+plt.savefig(
+    "results/latency_comparison.png",
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+# ------------------------------------------
+# ENTITY ACCURACY
+# ------------------------------------------
+
+entity_df = (
+    results_df.groupby("model")["entity_correct"]
+    .mean()
+    .reset_index()
+)
+
+plt.figure(figsize=(8, 5))
+
+sns.barplot(
+    data=entity_df,
+    x="model",
+    y="entity_correct"
+)
+
+plt.title("Entity Recognition Accuracy")
+
+plt.savefig(
+    "results/entity_accuracy.png",
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+# ------------------------------------------
+# CONDITION ANALYSIS
+# ------------------------------------------
+
+plt.figure(figsize=(10, 6))
+
+sns.barplot(
+    data=results_df,
+    x="condition",
+    y="wer",
+    hue="model",
+    estimator="mean"
+)
+
+plt.title("WER by Audio Condition")
+
+plt.savefig(
+    "results/condition_analysis.png",
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+print("\nPlots generated.")
+print("\nPipeline complete.")
